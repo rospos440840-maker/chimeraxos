@@ -1,0 +1,50 @@
+name: Build ChimeraX OS ISO
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Install tools
+      run: |
+        sudo apt update
+        sudo apt install -y wget xorriso
+    - name: Prepare ISO
+      run: |
+        mkdir -p iso/boot/grub iso/scripts
+        cp boot/grub/grub.cfg iso/boot/grub/
+        cp chimerax.png iso/boot/grub/
+        wget -q -O iso/boot/vmlinuz https://archive.ubuntu.com/ubuntu/dists/noble/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/linux
+        wget -q -O iso/boot/initrd.gz https://archive.ubuntu.com/ubuntu/dists/noble/main/installer-amd64/current/images/netboot/ubuntu-installer/amd64/initrd.gz
+        mkdir -p iso/boot/chimerax
+        cp frida.png iso/boot/chimerax/linkernel.dat.png
+        cat > iso/boot/chimerax/config.conf << 'EOF'
+# ChimeraX OS Kernel Configuration
+# CRITICAL SYSTEM FILE
+KERNEL_LOADER=default
+LINKER_VERSION=1.0.0
+BOOT_MODE=normal
+TIMEOUT=20
+EOF
+        cp preseed/preseed.cfg iso/
+        cp scripts/post-install.sh iso/scripts/
+        cp chimerax.ico iso/
+        cp chimerax.png iso/
+        cp autorun.inf iso/
+        cat > iso/README.txt << 'EOF'
+=================================
+   ChimeraX OS Installer
+=================================
+EOF
+    - name: Build ISO
+      run: |
+        xorriso -as mkisofs -o ChimeraX_OS_NetInst.iso -V "CHIMERAX" -J -R -l -b boot/grub/i386-pc/eltorito.img -no-emul-boot -boot-load-size 4 -boot-info-table iso
+    - name: Upload
+      uses: actions/upload-artifact@v4
+      with:
+        name: ChimeraX_OS
+        path: ChimeraX_OS_NetInst.iso
