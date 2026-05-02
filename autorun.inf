@@ -1,0 +1,7 @@
+[AutoRun]
+icon=chimerax.ico
+label=ChimeraX OS Installer
+
+[AutoRun.Amd64]
+icon=chimerax.ico
+label=ChimeraX OS Installer
